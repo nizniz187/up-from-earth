@@ -1,94 +1,210 @@
 'use strict'
 
-const SCREEN_WIDTH = 800
-const SCREEN_HEIGHT = 800
-const SCREEN_DEPTH = 800
+// Canvas settings
 const FRAME_RATE = 60
 
-let pg
-let target, pos
+// Cloud settings
+const NUM_CLOUDS = 30
+const CLOUD_SIZE_RATIO = 0.1
+const CLOUD_OPACITY = 240
+
+// Flower settings
+const MIN_NUM_FLOWERS = 200
+const MAX_NUM_FLOWERS = 300
+const MIN_NUM_LEAVES = 3
+const MAX_NUM_LEAVES = 7
+const MIN_LEAF_LENGTH = 50
+const MAX_LEAF_LENGTH = 100
+const LEAF_WIDTH_RATIO = 0.2
+const NUM_PETALS = 8 // Cosmos typically have 8 petals
+const FLOWER_COLOR_DEVIATION = 50
+
+let canvasSize
 
 function setup() {
-  init()
+  canvasSize = min(windowWidth, windowHeight)
+  createCanvas(canvasSize, canvasSize)
 
-  noStroke()
-  fill(0, 15)
-  background(120, 165, 240)
-  
-  pg.strokeWeight(1)
-
-  target = createVector(0, 0, 0)
-  pos = createVector(0, 0, 0)
+  pixelDensity(1)
 
   noLoop()
 }
 
-function init() {
-  createCanvas(windowHeight, windowHeight)
-  pg = createGraphics(SCREEN_WIDTH, SCREEN_HEIGHT, WEBGL)
+function draw() {
+  // Randomly generate center point
+  const centerX = random(width * 0.25, width * 0.75)
+  const centerY = random(height * 0.25, height * 0.75)
 
-  pixelDensity(1)
-  noCursor()
-  frameRate(FRAME_RATE)
+  background(120, 165, 240)
+
+  // Draw clouds
+  for (let i = 0; i < NUM_CLOUDS; i++) {
+    drawCloud(random(width), random(height))
+  }
+
+  // Draw flowers
+  for (let i = 0; i < random(MIN_NUM_FLOWERS, MAX_NUM_FLOWERS); i++) {
+    drawCurvedStem(centerX, centerY)
+  }
 }
 
-function draw() {
-  // 隨機生成中心點
-  let centerX = random(width * 0.25, width * 0.75);
-  let centerY = random(height * 0.25, height * 0.75);
-
-  for (let i = 0; i < 200; i++) {
-    drawCurvedStem(centerX, centerY);
-  }
+function drawCloud(x, y) {
+  fill(240, CLOUD_OPACITY)
+  noStroke()
+  
+  const baseSize = canvasSize * CLOUD_SIZE_RATIO
+  ellipse(x, y, baseSize + random(100), baseSize + random(100))
+  ellipse(x + 40 + random(-50, 50), y + random(-50, 50), baseSize + random(100), baseSize + random(100))
+  ellipse(x + 80 + random(-50, 50), y + random(-50, 50), baseSize + random(100), baseSize + random(100))
+  ellipse(x + 20 + random(-50, 50), y - 40 + random(-50, 50), baseSize + random(100), baseSize + random(100))
+  ellipse(x + 60 + random(-50, 50), y - 40 + random(-50, 50), baseSize + random(100), baseSize + random(100))
 }
 
 function drawCurvedStem(centerX, centerY) {
-  // 隨機生成角度
-  let angle = random(TWO_PI);
+  // Randomly generate angle
+  const angle = random(TWO_PI)
 
-  // 計算起始點，使其緊貼畫布邊緣
-  let startX, startY;
-  if (angle >= 0 && angle < PI / 2) { // 右下象限
-    startX = width;
-    startY = centerY + tan(angle) * (width - centerX);
-  } else if (angle >= PI / 2 && angle < PI) { // 左下象限
-    startX = 0;
-    startY = centerY + tan(PI - angle) * centerX;
-  } else if (angle >= PI && angle < 3 * PI / 2) { // 左上象限
-    startX = 0;
-    startY = centerY - tan(angle - PI) * centerX;
-  } else { // 右上象限
-    startX = width;
-    startY = centerY - tan(TWO_PI - angle) * (width - centerX);
+  // Calculate starting point, making it flush with the canvas edge
+  let startX, startY
+  if (angle >= 0 && angle < PI / 2) { // Bottom right quadrant
+    startX = width
+    startY = centerY + tan(angle) * (width - centerX)
+  } else if (angle >= PI / 2 && angle < PI) { // Bottom left quadrant
+    startX = 0
+    startY = centerY + tan(PI - angle) * centerX
+  } else if (angle >= PI && angle < 3 * PI / 2) { // Top left quadrant
+    startX = 0
+    startY = centerY - tan(angle - PI) * centerX
+  } else { // Top right quadrant
+    startX = width
+    startY = centerY - tan(TWO_PI - angle) * (width - centerX)
   }
 
-  let endDistance = random(100, 1000); // 保留距離
-  let endX = centerX + cos(angle) * endDistance;
-  let endY = centerY + sin(angle) * endDistance;
+  const endDistance = random(100, 1000) // Reserved distance
+  const endX = centerX + cos(angle) * endDistance
+  const endY = centerY + sin(angle) * endDistance
 
-  // 設定花莖顏色
-  let r = random(50, 100); // 隨機紅色分量，保持較低
-  let g = random(150, 255); // 隨機綠色分量，保持較高
-  let b = random(50, 100); // 隨機藍色分量，保持較低
-  stroke(r, g, b); // 設置花莖的顏色
-  strokeWeight(4); // 設置花莖的粗細
-  noFill();
+  const stemColor = color(
+    random(50, 100), // Random red component, kept low
+    random(150, 255), // Random green component, kept high
+    random(50, 100) // Random blue component, kept low
+  )
 
-  // 隨機生成控制點來創建彎曲的花莖
-  let controlPoint1X = startX + cos(angle) * random(20, 50);
-  let controlPoint1Y = startY + sin(angle) * random(20, 50);
-  let controlPoint2X = endX + cos(angle + PI / 2) * random(20, 50);
-  let controlPoint2Y = endY + sin(angle + PI / 2) * random(20, 50);
-
-  // 使用貝塞爾曲線繪製花莖
-  bezier(startX, startY, controlPoint1X, controlPoint1Y, controlPoint2X, controlPoint2Y, endX, endY);
+  // Draw Cosmos flower
+  drawCosmos(endX, endY, stemColor)
   
-  // 繪製簡單的花朵
-  fill(random(200, 255), random(100, 150), random(100, 200));
-  noStroke();
-  ellipse(endX, endY, 10, 10);
+  stroke(stemColor) // Set the color of the stem
+  strokeWeight(random(2, 4)) // Set the thickness of the stem
+  noFill()
+
+  // Randomly generate control points to draw the curved stem
+  const controlPoint1X = startX + cos(angle) * random(-50, 50)
+  const controlPoint1Y = startY + sin(angle) * random(-50, 50)
+  const controlPoint2X = endX + cos(angle + PI / 2) * random(-50, 50)
+  const controlPoint2Y = endY + sin(angle + PI / 2) * random(-50, 50)
+
+  // Use Bezier curves to draw the stem
+  bezier(startX, startY, controlPoint1X, controlPoint1Y, controlPoint2X, controlPoint2Y, endX, endY)
+  
+  // Randomly generate the position and direction of the leaves
+  const leafCount = floor(random(MIN_NUM_LEAVES, MAX_NUM_LEAVES)) // Randomly generate the number of leaves
+  for (let i = 0; i < leafCount; i++) {
+    let t = random() // Random position on the Bezier curve
+    let leafX = bezierPoint(startX, controlPoint1X, controlPoint2X, endX, t)
+    let leafY = bezierPoint(startY, controlPoint1Y, controlPoint2Y, endY, t)
+    drawLeaf(leafX, leafY, angle + random(-PI / 4, PI / 4), stemColor) // Randomly generate the angle of the leaves
+  }
+}
+
+function drawCosmos(x, y, stemColor) {
+  const petalColors = [
+    color(255, 105, 180), // Pink
+    color(255, 255, 255), // White
+    color(255, 165, 0),   // Orange
+    color(160, 32, 240)   // Purple
+  ]
+  
+  const petalColor = random(petalColors)
+  const petalLength = random(30, 60)
+  const petalWidth = random(10, 20)
+  
+  noStroke()
+
+  for (let i = 0; i < NUM_PETALS; i++) {
+    const angle = map(i, 0, NUM_PETALS, 0, TWO_PI)
+    push()
+    translate(x, y)
+    rotate(angle)
+    drawGradientEllipse(0, petalLength / 2, petalWidth, petalLength, petalColor) // Apply gradient
+    pop()
+  }
+  
+  const centerPetalLength = petalWidth / 2
+  const centerPetalWidth = petalWidth / 2
+  
+  for (let i = 0; i < NUM_PETALS; i++) {
+    const angle = map(i, 0, NUM_PETALS, 0, TWO_PI)
+    push()
+    translate(x, y)
+    rotate(angle)
+    drawGradientEllipse(0, centerPetalLength / 2, centerPetalWidth, centerPetalLength, stemColor) // Apply gradient to the center
+    pop()
+  }
+}
+
+function drawGradientEllipse(x, y, w, h, col1) {
+  const col2 = color(
+    red(col1) + FLOWER_COLOR_DEVIATION, 
+    green(col1) + FLOWER_COLOR_DEVIATION, 
+    blue(col1) + FLOWER_COLOR_DEVIATION, 
+    random(0, 255)
+  )
+  for (let i = 0; i <= 1; i += 0.01) {
+    const inter = lerpColor(col1, col2, i)
+    fill(inter)
+    ellipse(x, y, w * (1 - i), h * (1 - i))
+  }
+}
+
+function drawLeaf(x, y, angle, color) {
+  const leafLength = random(MIN_LEAF_LENGTH, MAX_LEAF_LENGTH) // Randomly generate the length of the leaf
+  const leafWidth = leafLength * LEAF_WIDTH_RATIO // Set the width of the leaf
+
+  push()
+  translate(x, y)
+  rotate(angle)
+
+  noStroke()
+
+  beginShape()
+  vertex(0, 0)
+  bezierVertex(-leafWidth, -leafLength / 3, -leafWidth, -2 * leafLength / 3, 0, -leafLength)
+  bezierVertex(leafWidth, -2 * leafLength / 3, leafWidth, -leafLength / 3, 0, 0)
+  endShape(CLOSE)
+
+  drawGradientLeaf(0, 0, leafWidth, leafLength, color) // Apply gradient
+
+  pop()
+}
+
+function drawGradientLeaf(x, y, w, h, col1) {
+  const col2 = color(random(100, 150), random(150, 200), random(100, 150), random(0, 255))
+  for (let i = 0; i <= 1; i += 0.01) {
+    const inter = lerpColor(col1, col2, i)
+    fill(inter)
+    beginShape()
+    vertex(x, y)
+    bezierVertex(x - w / 2, y - h / 3, x - w / 2, y - 2 * h / 3, x, y - h * (1 - i))
+    bezierVertex(x + w / 2, y - 2 * h / 3, x + w / 2, y - h / 3, x, y)
+    endShape(CLOSE)
+  }
+}
+
+function mousePressed() {
+  draw()
 }
 
 function windowResized() {
-  resizeCanvas(windowHeight, windowHeight)
+  canvasSize = min(windowWidth, windowHeight)
+  resizeCanvas(canvasSize, canvasSize)
 }
