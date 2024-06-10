@@ -17,6 +17,10 @@ const MIN_LEAF_LENGTH = 50
 const MAX_LEAF_LENGTH = 100
 const LEAF_WIDTH_RATIO = 0.2
 const NUM_PETALS = 8 // Cosmos typically have 8 petals
+const MIN_PETAL_LENGTH = 30
+const MAX_PETAL_LENGTH = 60
+const MIN_PETAL_WIDTH = 10
+const MAX_PETAL_WIDTH = 20
 const FLOWER_COLOR_DEVIATION = 50
 
 let canvasSize
@@ -125,8 +129,8 @@ function drawCosmos(x, y, stemColor) {
   ]
   
   const petalColor = random(petalColors)
-  const petalLength = random(30, 60)
-  const petalWidth = random(10, 20)
+  const petalLength = random(MIN_PETAL_LENGTH, MAX_PETAL_LENGTH)
+  const petalWidth = random(MIN_PETAL_WIDTH, MAX_PETAL_WIDTH)
   
   noStroke()
 
