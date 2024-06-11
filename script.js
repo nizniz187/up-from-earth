@@ -29,8 +29,6 @@ function setup() {
   canvasSize = min(windowWidth, windowHeight)
   createCanvas(canvasSize, canvasSize)
 
-  pixelDensity(1)
-
   noLoop()
 }
 
